@@ -19,7 +19,10 @@ GEM
     i18n (0.9.5)
       concurrent-ruby (~> 1.0)
     jwt (2.1.0)
+    metaclass (0.0.4)
     minitest (5.11.3)
+    mocha (1.5.0)
+      metaclass (~> 0.0.1)
     rake (10.5.0)
     redis (4.0.1)
     rspec (3.7.0)
@@ -44,6 +47,7 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (~> 1.16)
+  mocha
   rake (~> 10.0)
   rspec (~> 3.0)
   travis-github_apps!
