@@ -2,4 +2,10 @@ sudo: false
 language: ruby
 rvm:
   - 2.4.1
-before_install: gem install bundler -v 1.16.1
+before_install:
+  - gem install bundler -v 1.16.1
+env:
+  matrix:
+    - ACTIVESUPPORT_VERSION=3.2.22.5
+    - ACTIVESUPPORT_VERSION=4.2.10
+    - ACTIVESUPPORT_VERSION=5.2.0
