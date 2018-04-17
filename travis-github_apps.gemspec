@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"
 
-  spec.add_dependency "activesupport", "~> 4.2.10"
+  spec.add_dependency "activesupport", ">= 3.2"
   spec.add_dependency "jwt"
   spec.add_dependency "redis"
 end
