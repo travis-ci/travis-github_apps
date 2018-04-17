@@ -6,6 +6,6 @@ before_install:
   - gem install bundler -v 1.16.1
 env:
   matrix:
-    - ACTIVE_RECORD=3.2.22.5
-    - ACTIVE_RECORD=4.2.10
-    - ACTIVE_RECORD=5.2.0
+    - ACTIVESUPPORT_VERSION=3.2.22.5
+    - ACTIVESUPPORT_VERSION=4.2.10
+    - ACTIVESUPPORT_VERSION=5.2.0
