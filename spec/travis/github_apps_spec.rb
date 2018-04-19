@@ -33,6 +33,14 @@ RSpec.describe Travis::GithubApps do
       expect(subject.instance_variable_get(:@github_private_key))
         .to be_a OpenSSL::PKey::RSA
     end
+
+    context "when accept-header is specified" do
+      let(:subject) { Travis::GithubApps.new({accept_header: "application/vnd.github.antiope-preview+json"})}
+
+      it "intializes" do
+        expect(subject).to be
+      end
+    end
   end
 
   describe "#authorization_jwt" do
