@@ -35,7 +35,7 @@ RSpec.describe Travis::GithubApps do
     end
 
     context "when accept-header is specified" do
-      let(:subject) { Travis::GitHubApps.new(accept_header: "application/vnd.github.antiope-preview+json")}
+      let(:subject) { Travis::GithubApps.new(accept_header: "application/vnd.github.antiope-preview+json")}
 
       it "intializes" do
         expect(subject).to be
