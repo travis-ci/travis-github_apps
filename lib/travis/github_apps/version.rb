@@ -1,5 +1,5 @@
 module Travis
-  module GithubApps
+  class GithubApps
     VERSION = "0.1.0"
   end
 end

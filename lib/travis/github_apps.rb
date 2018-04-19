@@ -7,7 +7,7 @@ require 'redis'
 module Travis
   # Object for working with GitHub Apps installations
   #
-  class GitHubApps
+  class GithubApps
     # Access token is the "Installation Access Token" required to authenticate
     #   this application against the GitHub Apps API.
     #

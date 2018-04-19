@@ -3,7 +3,7 @@ RSpec.describe Travis::GithubApps do
     expect(Travis::GithubApps::VERSION).not_to be nil
   end
 
-  let(:subject){ Travis::GitHubApps.new }
+  let(:subject){ Travis::GithubApps.new }
 
   let(:payload){ {
     # Note that Time.now is frozen in tests, so we can get away with multiple
