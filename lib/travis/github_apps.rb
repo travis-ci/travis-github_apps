@@ -18,9 +18,8 @@ module Travis
     #   allow a healthy buffer for timing issues, lag, etc.
     #
     APP_TOKEN_TTL = 540 # 9 minutes in seconds
-    REQUEST_ACCEPTS_HEADER = "application/vnd.github.machine-man-preview+json"
 
-    attr_reader :cache_client
+    attr_reader :accept_header, :cache_client
 
     def initialize(config = {})
       # ID of the GitHub App. This value can be found on the "General Information"
@@ -35,7 +34,8 @@ module Travis
       @github_private_pem  = ENV['GITHUB_PRIVATE_PEM'] || config[:private_pem] || read_private_key_from_file
       @github_private_key  = OpenSSL::PKey::RSA.new(@github_private_pem)
 
-      @cache_client = Redis.new(config[:redis] || { url: 'redis://localhost' })
+      @accept_header       = accept_header
+      @cache_client        = Redis.new(config[:redis] || { url: 'redis://localhost' })
     end
 
     # Installation ID is served to us in the initial InstallationEvent callback.
@@ -63,7 +63,7 @@ module Travis
         request.url url
 
         request.headers['Authorization'] = "Bearer #{authorization_jwt}"
-        request.headers['Accept']        = REQUEST_ACCEPTS_HEADER
+        request.headers['Accept']        = accept_header
       end
     end
 
@@ -74,7 +74,7 @@ module Travis
         request.url url
 
         request.headers['Authorization'] = "Bearer #{authorization_jwt}"
-        request.headers['Accept']        = REQUEST_ACCEPTS_HEADER
+        request.headers['Accept']        = accept_header
       end
     end
 
