@@ -34,7 +34,7 @@ module Travis
       @github_private_pem  = ENV['GITHUB_PRIVATE_PEM'] || config[:private_pem] || read_private_key_from_file
       @github_private_key  = OpenSSL::PKey::RSA.new(@github_private_pem)
 
-      @accept_header       = accept_header
+      @accept_header       = config.fetch(:accept_header, "application/vnd.github.machine-man-preview+json")
       @cache_client        = Redis.new(config[:redis] || { url: 'redis://localhost' })
     end
 
