@@ -32,7 +32,7 @@ module Travis
       @github_apps_id      = ENV['GITHUB_APPS_ID'] || config[:apps_id] || 10131
 
       @github_api_endpoint = ENV['GITHUB_API_ENDPOINT'] || config[:api_endpoint] || "https://api.github.com"
-      @github_private_pem  = ENV['GITHUB_PRIVATE_KEY'] || config[:private_key] || read_private_key_from_file
+      @github_private_pem  = ENV['GITHUB_PRIVATE_PEM'] || config[:private_pem] || read_private_key_from_file
       @github_private_key  = OpenSSL::PKey::RSA.new(@github_private_pem)
 
       @cache_client = Redis.new(config[:redis] || { url: 'redis://localhost' })
@@ -145,12 +145,10 @@ module Travis
     def read_private_key_from_file
       pem_files_in_root = Dir["*.pem"]
 
-      @_github_private_key ||= if ENV['GITHUB_PRIVATE_PEM']
-        ENV['GITHUB_PRIVATE_PEM']
-      elsif pem_files_in_root.any?
+      @_github_private_key ||= if pem_files_in_root.any?
         File.read(pem_files_in_root.first)
       else
-        raise "Sorry, can't find ENV['GITHUB_PRIVATE_PEM'] or local pem file"
+        raise "Sorry, can't find local pem file"
       end
     end
   end
