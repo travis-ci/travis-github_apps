@@ -20,18 +20,22 @@ module Travis
     APP_TOKEN_TTL = 540 # 9 minutes in seconds
     REQUEST_ACCEPTS_HEADER = "application/vnd.github.machine-man-preview+json"
 
-    def initialize
+    attr_reader :cache_client
+
+    def initialize(config = {})
       # ID of the GitHub App. This value can be found on the "General Information"
       #   page of the App.
       #
       # TODO: this value is set to those of the "travis-ci-staging" app for
       #   development.
       #
-      @github_apps_id      = ENV['GITHUB_APPS_ID'] || 10131
+      @github_apps_id      = ENV['GITHUB_APPS_ID'] || config[:apps_id] || 10131
 
-      @github_api_endpoint = ENV['GITHUB_API_ENDPOINT'] || "https://api.github.com"
-      @github_private_pem  = ENV['GITHUB_PRIVATE_KEY'] || read_private_key_from_file
+      @github_api_endpoint = ENV['GITHUB_API_ENDPOINT'] || config[:api_endpoint] || "https://api.github.com"
+      @github_private_pem  = ENV['GITHUB_PRIVATE_KEY'] || config[:private_key] || read_private_key_from_file
       @github_private_key  = OpenSSL::PKey::RSA.new(@github_private_pem)
+
+      @cache_client = Redis.new(config[:redis] || { url: 'redis://localhost' })
     end
 
     # Installation ID is served to us in the initial InstallationEvent callback.
@@ -148,16 +152,6 @@ module Travis
       else
         raise "Sorry, can't find ENV['GITHUB_PRIVATE_PEM'] or local pem file"
       end
-    end
-
-    # We can /probably/ assume that nearly every service in our ecosystem has
-    #   Redis configured and/or access to it, so for now this is just a place-
-    #   holder for any additional configuration we need to do.
-    #
-    # Of course, you know what they say about assumptions...
-    #
-    def cache_client
-      @_redis ||= Redis.new
     end
   end
 end
