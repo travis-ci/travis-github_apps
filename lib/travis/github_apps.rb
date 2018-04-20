@@ -3,6 +3,7 @@ require "travis/github_apps/version"
 require 'active_support'
 require 'jwt'
 require 'redis'
+require 'faraday'
 
 module Travis
   # Object for working with GitHub Apps installations
@@ -19,9 +20,9 @@ module Travis
     #
     APP_TOKEN_TTL = 540 # 9 minutes in seconds
 
-    attr_reader :accept_header, :cache_client
+    attr_reader :accept_header, :cache_client, :installation_id
 
-    def initialize(config = {})
+    def initialize(installation_id, config = {})
       # ID of the GitHub App. This value can be found on the "General Information"
       #   page of the App.
       #
@@ -36,6 +37,7 @@ module Travis
 
       @accept_header       = config.fetch(:accept_header, "application/vnd.github.machine-man-preview+json")
       @cache_client        = Redis.new(config[:redis] || { url: 'redis://localhost' })
+      @installation_id     = installation_id
     end
 
     # Installation ID is served to us in the initial InstallationEvent callback.
@@ -46,14 +48,14 @@ module Travis
     # The installation_id of the travis-vi-staging app on the Travis-CI org is
     #   120134
     #
-    def access_token(installation_id)
+    def access_token
       # Fetch from cache. We can expect this to be `nil` if unset or expired.
       #
-      access_token = cache_client.get(cache_key_for_access_token(installation_id))
+      access_token = cache_client.get(cache_key_for_access_token)
 
       return access_token if access_token
 
-      fetch_new_access_token(installation_id)
+      fetch_new_access_token
     end
 
     # Issue a GET with the supplied URL in the context of our GitHub App
@@ -62,26 +64,31 @@ module Travis
       github_api_conn.get do |request|
         request.url url
 
-        request.headers['Authorization'] = "Bearer #{authorization_jwt}"
+        request.headers['Authorization'] = "Token #{access_token}"
         request.headers['Accept']        = accept_header
       end
     end
 
     # Issue a POST with the supplied URL in the context of our GitHub App
     #
-    def post_with_app(url)
+    def post_with_app(url, payload = '')
       github_api_conn.post do |request|
         request.url url
 
-        request.headers['Authorization'] = "Bearer #{authorization_jwt}"
+        request.headers['Authorization'] = "Token #{access_token}"
         request.headers['Accept']        = accept_header
+        request.body = payload
       end
     end
 
     private
 
-    def fetch_new_access_token(installation_id)
-      response = post_with_app("/installations/#{installation_id}/access_tokens")
+    def fetch_new_access_token
+      response = github_api_conn.post do |req|
+        req.url "/installations/#{installation_id}/access_tokens"
+        req.headers['Authorization'] = "Bearer #{authorization_jwt}"
+        req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
+      end
 
       # We probably want to do something different than `raise` here but I don't
       #   know what yet.
@@ -101,7 +108,7 @@ module Travis
       #   a window of a few second for API errors at the end of a token's life.
       #
       cache_client.set(
-        cache_key_for_access_token(installation_id),
+        cache_key_for_access_token,
         github_access_token,
         { ex: APP_TOKEN_TTL }
       )
@@ -133,7 +140,7 @@ module Travis
       @_github_api_conn ||= Faraday.new(url: @github_api_endpoint)
     end
 
-    def cache_key_for_access_token(installation_id)
+    def cache_key_for_access_token
       "github_access_token:#{installation_id}"
     end
 
