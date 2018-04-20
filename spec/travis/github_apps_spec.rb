@@ -3,7 +3,8 @@ RSpec.describe Travis::GithubApps do
     expect(Travis::GithubApps::VERSION).not_to be nil
   end
 
-  let(:subject){ Travis::GithubApps.new }
+  let(:subject){ Travis::GithubApps.new(installation_id) }
+  let(:installation_id) { '12345' }
 
   let(:payload){ {
     # Note that Time.now is frozen in tests, so we can get away with multiple
@@ -62,7 +63,7 @@ RSpec.describe Travis::GithubApps do
 
         Redis.any_instance.stubs(:get).returns(random_string)
 
-        expect(subject.access_token(installation_id)).to eq random_string
+        expect(subject.access_token).to eq random_string
       end
     end
 
@@ -74,46 +75,40 @@ RSpec.describe Travis::GithubApps do
 
         Redis.any_instance.stubs(:get).returns(nil)
 
-        subject.expects(:fetch_new_access_token).with(installation_id).once.returns(random_string)
+        subject.expects(:fetch_new_access_token).once.returns(random_string)
 
-        expect(subject.access_token(installation_id)).to eq random_string
+        expect(subject.access_token).to eq random_string
       end
-    end
-  end
-
-  class FakeGitHubResponse
-    def status
-      201
-    end
-
-    def body
-      "{\"token\":\"#{access_token}\",\"expires_at\":\"2018-04-03T20:52:14Z\"}"
-    end
-
-    def access_token
-      "github_apps_access_token"
     end
   end
 
   describe "#fetch_new_access_token" do
-    let(:fake_github_response){ FakeGitHubResponse.new }
+    let(:conn) {
+      Faraday.new do |builder|
+        builder.adapter :test do |stub|
+          stub.post("/installations/12345/access_tokens") { |env| [201, {}, "{\"token\":\"github_apps_access_token\",\"expires_at\":\"2018-04-03T20:52:14Z\"}"] }
+          stub.post("/installations/23456/access_tokens") { |env| [404, {}, ""] }
+        end
+      end
+    }
 
     context "on a 201 response" do
       it "sets the access token in the cache and returns it to the caller" do
-        subject.expects(:post_with_app).once.returns(fake_github_response)
+        subject.expects(:github_api_conn).returns(conn)
         Redis.any_instance.stubs(:set).returns(nil)
 
-        expect(subject.send(:fetch_new_access_token, installation_id)).to eq fake_github_response.access_token
+        expect(subject.send(:fetch_new_access_token)).to eq "github_apps_access_token"
       end
     end
 
     context "on a non-201 response" do
+      let(:installation_id) { '23456' }
       it "raises an error" do
-        fake_github_response.expects(:status).at_least_once.returns(404)
-        subject.expects(:post_with_app).once.returns(fake_github_response)
+        subject.expects(:github_api_conn).returns(conn)
+        Redis.any_instance.stubs(:set).returns(nil)
 
         expect {
-          subject.send(:fetch_new_access_token, installation_id)
+          subject.send(:fetch_new_access_token)
         }.to raise_error(RuntimeError)
       end
     end
