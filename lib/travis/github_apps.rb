@@ -67,7 +67,6 @@ module Travis
 
         request.headers['Authorization'] = "Token #{access_token}"
         request.headers['Accept']        = accept_header
-        request.response :logger if debug
       end
     end
 
@@ -80,7 +79,6 @@ module Travis
         request.headers['Authorization'] = "Token #{access_token}"
         request.headers['Accept']        = accept_header
         request.body = payload
-        request.response :logger if debug
       end
     end
 
@@ -91,11 +89,6 @@ module Travis
         req.url "/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
-        if debug
-          req.response :logger do |logger|
-            logger.filter(/((?:Bearer|Token) )[^"]/,'\1[REDACTED]')
-          end
-        end
       end
 
       # We probably want to do something different than `raise` here but I don't
@@ -145,7 +138,9 @@ module Travis
     end
 
     def github_api_conn
-      @_github_api_conn ||= Faraday.new(url: @github_api_endpoint)
+      @_github_api_conn ||= Faraday.new(url: @github_api_endpoint) do |f|
+        f.response :logger if debug
+       end
     end
 
     def cache_key_for_access_token
