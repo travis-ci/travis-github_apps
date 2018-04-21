@@ -20,7 +20,7 @@ module Travis
     #
     APP_TOKEN_TTL = 540 # 9 minutes in seconds
 
-    attr_reader :accept_header, :cache_client, :installation_id
+    attr_reader :accept_header, :cache_client, :installation_id, :debug
 
     def initialize(installation_id, config = {})
       # ID of the GitHub App. This value can be found on the "General Information"
@@ -38,6 +38,7 @@ module Travis
       @accept_header       = config.fetch(:accept_header, "application/vnd.github.machine-man-preview+json")
       @cache_client        = Redis.new(config[:redis] || { url: 'redis://localhost' })
       @installation_id     = installation_id
+      @debug               = !!config[:debug]
     end
 
     # Installation ID is served to us in the initial InstallationEvent callback.
@@ -66,6 +67,7 @@ module Travis
 
         request.headers['Authorization'] = "Token #{access_token}"
         request.headers['Accept']        = accept_header
+        request.response :logger if debug
       end
     end
 
@@ -78,6 +80,7 @@ module Travis
         request.headers['Authorization'] = "Token #{access_token}"
         request.headers['Accept']        = accept_header
         request.body = payload
+        request.response :logger if debug
       end
     end
 
@@ -88,6 +91,11 @@ module Travis
         req.url "/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
+        if debug
+          req.response :logger do |logger|
+            logger.filter(/((?:Bearer|Token) )[^"]/,'\1[REDACTED]')
+          end
+        end
       end
 
       # We probably want to do something different than `raise` here but I don't
