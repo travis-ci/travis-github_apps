@@ -139,8 +139,8 @@ module Travis
 
     def github_api_conn
       @_github_api_conn ||= Faraday.new(url: @github_api_endpoint) do |f|
-        f.adapter Faraday.default_adapter
         f.response :logger if debug
+        f.adapter Faraday.default_adapter
        end
     end
 
