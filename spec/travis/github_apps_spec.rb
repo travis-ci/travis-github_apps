@@ -3,7 +3,8 @@ RSpec.describe Travis::GithubApps do
     expect(Travis::GithubApps::VERSION).not_to be nil
   end
 
-  let(:subject){ Travis::GithubApps.new(installation_id) }
+  let(:config) { { redis: { url: 'redis://localhost' } } }
+  let(:subject){ Travis::GithubApps.new(installation_id, config) }
   let(:installation_id) { '12345' }
 
   let(:payload){ {
