@@ -20,7 +20,7 @@ module Travis
     #
     APP_TOKEN_TTL = 540 # 9 minutes in seconds
 
-    attr_reader :accept_header, :cache_client, :installation_id, :debug
+    attr_reader :accept_header, :cache, :installation_id, :debug
 
     def initialize(installation_id, config = {})
       # ID of the GitHub App. This value can be found on the "General Information"
@@ -36,8 +36,8 @@ module Travis
       @github_private_key  = OpenSSL::PKey::RSA.new(@github_private_pem)
 
       @accept_header       = config.fetch(:accept_header, "application/vnd.github.machine-man-preview+json")
-      @cache_client        = Redis.new(config[:redis] || { url: 'redis://localhost' })
       @installation_id     = installation_id
+      @cache               = Redis.new(config[:redis]) if config[:redis]
       @debug               = !!config[:debug]
     end
 
@@ -52,7 +52,7 @@ module Travis
     def access_token
       # Fetch from cache. We can expect this to be `nil` if unset or expired.
       #
-      access_token = cache_client.get(cache_key_for_access_token)
+      access_token = read_cache
 
       return access_token if access_token
 
@@ -108,11 +108,7 @@ module Travis
       #   know how long the call to #fetch_new_access_token took, and could create
       #   a window of a few second for API errors at the end of a token's life.
       #
-      cache_client.set(
-        cache_key_for_access_token,
-        github_access_token,
-        { ex: APP_TOKEN_TTL }
-      )
+      write_cache(github_access_token)
 
       github_access_token
     end
@@ -144,7 +140,15 @@ module Travis
        end
     end
 
-    def cache_key_for_access_token
+    def read_cache
+      cache.get(cache_key) if cache
+    end
+
+    def write_cache(token)
+      cache.set(cache_key, token, ex: APP_TOKEN_TTL) if cache
+    end
+
+    def cache_key
       "github_access_token:#{installation_id}"
     end
 
