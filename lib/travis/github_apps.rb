@@ -82,6 +82,18 @@ module Travis
       end
     end
 
+    # Issue a PATCH with the supplied URL in the context of our GitHub App
+    #
+    def patch_with_app(url, payload = '')
+      github_api_conn.patch do |request|
+        request.url url
+
+        request.headers['Authorization'] = "Token #{access_token}"
+        request.headers['Accept']        = accept_header
+        request.body = payload
+      end
+    end
+
     private
 
     def fetch_new_access_token
