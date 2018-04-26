@@ -15,10 +15,15 @@ module Travis
     # https://developer.github.com/apps/building-github-apps/authentication-options-for-github-apps/#authenticating-as-an-installation
     #
 
-    # GitHub Apps tokens have a maximum life of 10 minutes, but we'll use 9 to
+    # GitHub allows JWT token to be valid up to 10 minutes.
+    # We set this to 9 minutes, to be sure.
+    #
+    JWT_TOKEN_TTL = 9*60
+
+    # GitHub Apps tokens have a maximum life of 60 minutes, but we'll use 40 to
     #   allow a healthy buffer for timing issues, lag, etc.
     #
-    APP_TOKEN_TTL = 540 # 9 minutes in seconds
+    APP_TOKEN_TTL = 40*60 # 40 minutes in seconds
 
     attr_reader :accept_header, :cache, :installation_id, :debug
 
@@ -129,7 +134,7 @@ module Travis
       JWT.encode(jwt_payload, @github_private_key, "RS256")
     end
 
-    def jwt_payload(app_token_ttl: APP_TOKEN_TTL)
+    def jwt_payload(jwt_token_ttl: JWT_TOKEN_TTL)
       time = Time.now.to_i
       @payload = {
         # iat: issued at time
@@ -137,7 +142,7 @@ module Travis
         iat: time,
         # exp: JWT expiration time in seconds (10 minute maximum)
         #
-        exp: time + app_token_ttl,
+        exp: time + jwt_token_ttl,
 
         # iss: GitHub App's identifier
         #

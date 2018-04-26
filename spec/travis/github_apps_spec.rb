@@ -12,7 +12,7 @@ RSpec.describe Travis::GithubApps do
     #   calls to it without drift.
     #
     iat: Time.now.to_i,
-    exp: Time.now.to_i + subject.class::APP_TOKEN_TTL,
+    exp: Time.now.to_i + subject.class::JWT_TOKEN_TTL,
     iss: subject.instance_variable_get(:@github_apps_id)
   }}
 
