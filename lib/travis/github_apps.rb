@@ -153,6 +153,8 @@ module Travis
     def github_api_conn
       @_github_api_conn ||= Faraday.new(url: @github_api_endpoint) do |f|
         f.response :logger if debug
+        f.use FaradayMiddleware::FollowRedirects, limit: 5
+        f.request :retry
         f.adapter Faraday.default_adapter
        end
     end
