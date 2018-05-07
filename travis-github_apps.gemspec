@@ -39,4 +39,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "jwt"
   spec.add_dependency "redis"
   spec.add_dependency "faraday"
+  spec.add_dependency "faraday_middleware"
 end

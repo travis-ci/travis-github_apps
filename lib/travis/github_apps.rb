@@ -4,6 +4,7 @@ require 'active_support'
 require 'jwt'
 require 'redis'
 require 'faraday'
+require 'faraday_middleware'
 
 module Travis
   # Object for working with GitHub Apps installations
