@@ -147,7 +147,7 @@ module Travis
 
         # iss: GitHub App's identifier
         #
-        iss: @github_apps_id
+        iss: @github_apps_id.to_i
       }
     end
 
