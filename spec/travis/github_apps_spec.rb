@@ -87,8 +87,8 @@ RSpec.describe Travis::GithubApps do
     let(:conn) {
       Faraday.new do |builder|
         builder.adapter :test do |stub|
-          stub.post("/installations/12345/access_tokens") { |env| [201, {}, "{\"token\":\"github_apps_access_token\",\"expires_at\":\"2018-04-03T20:52:14Z\"}"] }
-          stub.post("/installations/23456/access_tokens") { |env| [404, {}, ""] }
+          stub.post("/apps/installations/12345/access_tokens") { |env| [201, {}, "{\"token\":\"github_apps_access_token\",\"expires_at\":\"2018-04-03T20:52:14Z\"}"] }
+          stub.post("/apps/installations/23456/access_tokens") { |env| [404, {}, ""] }
         end
       end
     }
