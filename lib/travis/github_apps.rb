@@ -13,7 +13,7 @@ module Travis
     # Access token is the "Installation Access Token" required to authenticate
     #   this application against the GitHub Apps API.
     #
-    # https://developer.github.com/apps/building-github-apps/authentication-options-for-github-apps/#authenticating-as-an-installation
+    # https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
     #
 
     # GitHub allows JWT token to be valid up to 10 minutes.
@@ -104,7 +104,7 @@ module Travis
 
     def fetch_new_access_token
       response = github_api_conn.post do |req|
-        req.url "/apps/installations/#{installation_id}/access_tokens"
+        req.url "/app/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
       end
