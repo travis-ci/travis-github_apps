@@ -1,4 +1,5 @@
-require "travis/github_apps/version"
+require_relative "github_apps/version"
+require_relative "github_apps/error"
 
 require 'active_support'
 require 'jwt'
@@ -113,7 +114,7 @@ module Travis
       #   know what yet.
       #
       if response.status != 201
-        raise("Failed to obtain token from GitHub: #{response.status} - #{response.body}")
+        raise TokenUnavailableError.new("Failed to obtain token from GitHub: #{response.status} - #{response.body}")
       end
 
       # Parse the response for the token and expiration
