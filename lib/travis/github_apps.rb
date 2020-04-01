@@ -26,7 +26,7 @@ module Travis
     #
     APP_TOKEN_TTL = 40*60 # 40 minutes in seconds
 
-    attr_reader :accept_header, :cache, :installation_id, :debug
+    attr_reader :accept_header, :cache, :installation_id, :debug, :repository_id
 
     def initialize(installation_id, config = {}, repository_id = nil)
       # ID of the GitHub App. This value can be found on the "General Information"
