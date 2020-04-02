@@ -109,6 +109,7 @@ module Travis
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
         req.body = "{ 'repositories': '[#{repository_id}]' }" if repository_id
+        puts "req: #{req.inspect}"
       end
 
       # We probably want to do something different than `raise` here but I don't
@@ -120,6 +121,7 @@ module Travis
 
       # Parse the response for the token and expiration
       #
+      puts "response.body: #{response.body}"
       response_body = JSON.load(response.body)
       github_access_token  = response_body.fetch('token')
 
