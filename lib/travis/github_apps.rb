@@ -1,7 +1,6 @@
 require "travis/github_apps/version"
 
 require 'active_support'
-require 'json'
 require 'jwt'
 require 'redis'
 require 'faraday'
@@ -109,7 +108,7 @@ module Travis
         req.url "/app/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
-        req.body = JSON.dump(repositories: [repository_id]) if repository_id
+        req.body = '{ "repositories": "[' + repository_id.to_s ']" }' if repository_id
         puts "req: #{req.inspect}"
       end
 
