@@ -108,7 +108,7 @@ module Travis
         req.url "/app/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
-        req.body = '{ "repositories": "[' + repository_id.to_s ']" }' if repository_id
+        req.body = '{ "repositories": "[' + repository_id.to_s + ']" }' if repository_id
         puts "req: #{req.inspect}"
       end
 
