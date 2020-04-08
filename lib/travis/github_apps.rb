@@ -136,7 +136,7 @@ module Travis
     end
 
     def repositories_list 
-      @repositories_list ||= repository_id.kind_of?(Array) ? repository_id.compact.reject(&:empty?).join(',') : repository_id.to_s if repository_id
+      @repositories_list ||= repository_id.kind_of?(Array) ? repository_id.compact.reject(&:empty?).join(',') : repository_id.to_s
     end
 
     def authorization_jwt
