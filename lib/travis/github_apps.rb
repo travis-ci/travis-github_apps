@@ -109,8 +109,8 @@ module Travis
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
         if repository_id
-          req.body = '{ "repositories": "[' + repository_id.compact.reject(&:empty?).join(',') + ']", "permissions": { "contents": "read" } }' if repository_id.kind_of?(Array)
-          req.body = '{ "repositories": "[' + repository_id.to_s + ']", "permissions": { "contents": "read" } }' if repository_id.kind_of?(String) || repository_id.kind_of?(Integer)
+          repositories_list = repository_id.kind_of?(Array) ? repository_id.compact.reject(&:empty?).join(',') : repository_id.to_s
+          req.body = '{ "repositories": "[' + repositories_list + ']", "permissions": { "contents": "read" } }'
         end
         puts "req: #{req.inspect}"
       end
