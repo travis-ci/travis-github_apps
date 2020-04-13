@@ -1,6 +1,7 @@
 require "travis/github_apps/version"
 
 require 'active_support'
+require 'json'
 require 'jwt'
 require 'redis'
 require 'faraday'
@@ -136,8 +137,7 @@ module Travis
     end
 
     def repositories_list
-      puts "repository_id.kind_of?(Array): #{repository_id.kind_of?(Array)}"
-      @repositories_list ||= repository_id.kind_of?(Array) ? repository_id.compact.reject(&:empty?).join(',') : [repository_id.to_s]
+      @repositories_list ||= repository_id.kind_of?(Array) ? repository_id.compact.reject(&:empty?).map(&:to_s) : [repository_id.to_s]
     end
 
     def authorization_jwt
@@ -178,7 +178,7 @@ module Travis
     end
 
     def cache_key
-      return "github_access_token_repo:#{installation_id}_#{repositories_list}" if repository_id
+      return "github_access_token_repo:#{installation_id}_#{repositories_list.join('-')}" if repository_id
       "github_access_token:#{installation_id}"
     end
 
