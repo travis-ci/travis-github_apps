@@ -135,8 +135,9 @@ module Travis
       github_access_token
     end
 
-    def repositories_list 
-      @repositories_list ||= repository_id.kind_of?(Array) ? repository_id.compact.reject(&:empty?).join(',') : repository_id.to_s
+    def repositories_list
+      puts "repository_id.kind_of?(Array): #{repository_id.kind_of?(Array)}"
+      @repositories_list ||= repository_id.kind_of?(Array) ? repository_id.compact.reject(&:empty?).join(',') : [repository_id.to_s]
     end
 
     def authorization_jwt
