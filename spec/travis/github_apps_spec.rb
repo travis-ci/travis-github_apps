@@ -110,7 +110,7 @@ RSpec.describe Travis::GithubApps do
 
         expect {
           subject.send(:fetch_new_access_token)
-        }.to raise_error(RuntimeError)
+        }.to raise_error(Travis::TokenUnavailableError)
       end
     end
   end
