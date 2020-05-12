@@ -122,6 +122,7 @@ module Travis
       # Parse the response for the token and expiration
       #
       response_body = JSON.load(response.body)
+      puts "repositories_list: #{repositories_list} response_body: #{response_body}" if repositories
       github_access_token  = response_body.fetch('token')
 
       # Store the access_token in redis, with a computed expiration. We need to
