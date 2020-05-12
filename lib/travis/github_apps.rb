@@ -46,7 +46,7 @@ module Travis
       @installation_id     = installation_id
       @repositories        = repositories
       @cache               = Redis.new(config[:redis]) if config[:redis]
-      @debug               = true # !!config[:debug]
+      @debug               = !!config[:debug]
     end
 
     # Installation ID is served to us in the initial InstallationEvent callback.
