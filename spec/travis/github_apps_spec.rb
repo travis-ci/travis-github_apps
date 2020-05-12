@@ -89,11 +89,25 @@ RSpec.describe Travis::GithubApps do
         builder.adapter :test do |stub|
           stub.post("/app/installations/12345/access_tokens") { |env| [201, {}, "{\"token\":\"github_apps_access_token\",\"expires_at\":\"2018-04-03T20:52:14Z\"}"] }
           stub.post("/app/installations/23456/access_tokens") { |env| [404, {}, ""] }
+          stub.post("/app/installations/45678/access_tokens", JSON.dump({:repository_ids => ["123", "456"], :permissions => { :contents => "read" } })) { |env| [201, {}, "{\"token\":\"github_apps_access_token\",\"expires_at\":\"2018-04-03T20:52:14Z\",\"repositories\":\"[{id:123},{id:456}]\"}"] }
+          stub.post("/app/installations/56789/access_tokens", JSON.dump({:repository_ids => ["789"], :permissions => { :contents => "read" } })) { |env| [404, {}, ""] }
         end
       end
     }
 
     context "on a 201 response" do
+      it "sets the access token in the cache and returns it to the caller" do
+        subject.expects(:github_api_conn).returns(conn)
+        Redis.any_instance.stubs(:set).returns(nil)
+
+        expect(subject.send(:fetch_new_access_token)).to eq "github_apps_access_token"
+      end
+    end
+
+    context "with repository_ids on a 201 response" do
+      let(:installation_id) { '45678' }
+      let(:repositories) { [123, 456] }
+      let(:subject){ Travis::GithubApps.new(installation_id, config, repositories) }
       it "sets the access token in the cache and returns it to the caller" do
         subject.expects(:github_api_conn).returns(conn)
         Redis.any_instance.stubs(:set).returns(nil)
@@ -113,5 +127,20 @@ RSpec.describe Travis::GithubApps do
         }.to raise_error(RuntimeError)
       end
     end
+
+    context "with repository_ids on a non-201 response" do
+      let(:installation_id) { '56789' }
+      let(:repositories) { [789] }
+      let(:subject){ Travis::GithubApps.new(installation_id, config, repositories) }
+      it "raises an error" do
+        subject.expects(:github_api_conn).returns(conn)
+        Redis.any_instance.stubs(:set).returns(nil)
+
+        expect {
+          subject.send(:fetch_new_access_token)
+        }.to raise_error(RuntimeError)
+      end
+    end
+
   end
 end
