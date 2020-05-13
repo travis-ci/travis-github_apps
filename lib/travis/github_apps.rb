@@ -104,7 +104,7 @@ module Travis
 
     def fetch_new_access_token
       response = github_api_conn.post do |req|
-        req.url "/app/installations/#{installation_id}/access_tokens"
+        req.url "app/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
       end
