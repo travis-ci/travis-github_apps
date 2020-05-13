@@ -1,6 +1,7 @@
 require "travis/github_apps/version"
 
 require 'active_support'
+require 'json'
 require 'jwt'
 require 'redis'
 require 'faraday'
@@ -26,9 +27,9 @@ module Travis
     #
     APP_TOKEN_TTL = 40*60 # 40 minutes in seconds
 
-    attr_reader :accept_header, :cache, :installation_id, :debug
+    attr_reader :accept_header, :cache, :installation_id, :debug, :repositories
 
-    def initialize(installation_id, config = {})
+    def initialize(installation_id, config = {}, repositories = nil)
       # ID of the GitHub App. This value can be found on the "General Information"
       #   page of the App.
       #
@@ -43,6 +44,7 @@ module Travis
 
       @accept_header       = config.fetch(:accept_header, "application/vnd.github.machine-man-preview+json")
       @installation_id     = installation_id
+      @repositories        = repositories
       @cache               = Redis.new(config[:redis]) if config[:redis]
       @debug               = !!config[:debug]
     end
@@ -107,6 +109,7 @@ module Travis
         req.url "app/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
+        req.body = JSON.dump({:repository_ids => repositories_list, :permissions => { :contents => "read" } }) if repositories
       end
 
       # We probably want to do something different than `raise` here but I don't
@@ -129,6 +132,10 @@ module Travis
       write_cache(github_access_token)
 
       github_access_token
+    end
+
+    def repositories_list
+      @repositories_list ||= repositories.compact.map(&:to_s).reject(&:empty?)
     end
 
     def authorization_jwt
@@ -169,6 +176,7 @@ module Travis
     end
 
     def cache_key
+      return "github_access_token_repo:#{installation_id}_#{repositories_list.join('-')}" if repositories
       "github_access_token:#{installation_id}"
     end
 
