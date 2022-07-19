@@ -36,17 +36,20 @@ module Travis
       # TODO: this value is set to those of the "travis-ci-staging" app for
       #   development.
       #
-      @github_apps_id      = ENV['GITHUB_APPS_ID'] || config[:apps_id] || 10131
+      @github_apps_id             = ENV['GITHUB_APPS_ID'] || config[:apps_id] || 10131
 
-      @github_api_endpoint = ENV['GITHUB_API_ENDPOINT'] || config[:api_endpoint] || "https://api.github.com"
-      @github_private_pem  = ENV['GITHUB_PRIVATE_PEM'] || config[:private_pem] || read_private_key_from_file
-      @github_private_key  = OpenSSL::PKey::RSA.new(@github_private_pem)
+      @github_api_endpoint        = ENV['GITHUB_API_ENDPOINT'] || config[:api_endpoint] || "https://api.github.com"
+      @github_private_pem         = ENV['GITHUB_PRIVATE_PEM'] || config[:private_pem] || read_private_key_from_file
+      @github_private_key         = OpenSSL::PKey::RSA.new(@github_private_pem)
 
-      @accept_header       = config.fetch(:accept_header, "application/vnd.github.machine-man-preview+json")
-      @installation_id     = installation_id
-      @repositories        = repositories
-      @cache               = Redis.new(config[:redis]) if config[:redis]
-      @debug               = !!config[:debug]
+      @accept_header              = config.fetch(:accept_header, "application/vnd.github.machine-man-preview+json")
+      @installation_id            = installation_id
+      @repositories               = repositories
+      @cache                      = Redis.new(config[:redis]) if config[:redis]
+      @debug                      = !!config[:debug]
+      @content_permission         = ENV['GITHUB_APPS_CONTENT_PERMISSION'] || config[:content_permission] || 'read'
+      @security_events_permission = ENV['GITHUB_APPS_SECURITY_EVENTS_PERMISSION'] || config[:security_events_permission] || nil
+      @workflows_permission       = ENV['GITHUB_APPS_WORKFLOWS_PERMISSION'] || config[:workflows_permission] || nil
     end
 
     # Installation ID is served to us in the initial InstallationEvent callback.
@@ -109,7 +112,7 @@ module Travis
         req.url "app/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
-        req.body = JSON.dump({:repository_ids => repositories_list, :permissions => { :contents => "read" } }) if repositories
+        req.body = JSON.dump({:repository_ids => repositories_list, :permissions => permissions }) if repositories
       end
 
       # We probably want to do something different than `raise` here but I don't
@@ -132,6 +135,13 @@ module Travis
       write_cache(github_access_token)
 
       github_access_token
+    end
+
+    def permissions
+      perm = { :contents => @content_permission}
+      perm[:security_events] = @security_events_permission if @security_events_permission
+      perm[:workflows] = @workflows_permission if @workflows_permission
+      perm
     end
 
     def repositories_list
