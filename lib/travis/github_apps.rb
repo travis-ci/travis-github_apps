@@ -107,17 +107,32 @@ module Travis
 
     private
 
-    def fetch_new_access_token
-      response = github_api_conn.post do |req|
+    def fetch_token(use_custom_permissions)
+      github_api_conn.post do |req|
         req.url "app/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
         req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
-        req.body = JSON.dump({:repository_ids => repositories_list, :permissions => permissions }) if repositories
+        req.body = JSON.dump({
+          :repository_ids => repositories_list,
+          :permissions => use_custom_permissions ? permissions : default_permissions
+        }) if repositories
       end
+    end
 
+    def has_custom_permissions
+      @has_custom_permissions ||= @content_permission != 'read' || @security_events_permission || @workflows_permission
+    end
+
+
+    def fetch_new_access_token
+      response = fetch_token(true)
       # We probably want to do something different than `raise` here but I don't
       #   know what yet.
       #
+      if response.status == 422 && has_custom_permissions
+          response = fetch_token(false)
+      end
+
       if response.status != 201
         raise("Failed to obtain token from GitHub: #{response.status} - #{response.body}")
       end
@@ -142,6 +157,10 @@ module Travis
       perm[:security_events] = @security_events_permission if @security_events_permission
       perm[:workflows] = @workflows_permission if @workflows_permission
       perm
+    end
+
+    def default_permissions
+      { :contents => 'read' }
     end
 
     def repositories_list
