@@ -2,6 +2,7 @@ language: ruby
 rvm:
   - 2.5.5
 before_install:
+  - gem install rubygems-update -v 3.4.22
   - gem install bundler -v 1.16.1
 env:
   matrix:
