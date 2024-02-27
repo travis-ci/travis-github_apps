@@ -1,11 +1,13 @@
-require "travis/github_apps/version"
+# frozen_string_literal: true
+
+require 'travis/github_apps/version'
 
 require 'active_support'
 require 'json'
 require 'jwt'
 require 'redis'
 require 'faraday'
-require 'faraday_middleware'
+require 'faraday/follow_redirects'
 
 module Travis
   # Object for working with GitHub Apps installations
@@ -20,29 +22,29 @@ module Travis
     # GitHub allows JWT token to be valid up to 10 minutes.
     # We set this to 9 minutes, to be sure.
     #
-    JWT_TOKEN_TTL = 9*60
+    JWT_TOKEN_TTL = 9 * 60
 
     # GitHub Apps tokens have a maximum life of 60 minutes, but we'll use 40 to
     #   allow a healthy buffer for timing issues, lag, etc.
     #
-    APP_TOKEN_TTL = 40*60 # 40 minutes in seconds
+    APP_TOKEN_TTL = 40 * 60 # 40 minutes in seconds
 
     attr_reader :accept_header, :cache, :installation_id, :debug, :repositories
 
-    def initialize(installation_id, config = {}, repositories = nil)
+    def initialize(installation_id, config = {}, repositories = nil) # rubocop:disable Metrics/CyclomaticComplexity
       # ID of the GitHub App. This value can be found on the "General Information"
       #   page of the App.
       #
       # TODO: this value is set to those of the "travis-ci-staging" app for
       #   development.
       #
-      @github_apps_id      = ENV['GITHUB_APPS_ID'] || config[:apps_id] || 10131
+      @github_apps_id      = ENV['GITHUB_APPS_ID'] || config[:apps_id] || 10_131
 
-      @github_api_endpoint = ENV['GITHUB_API_ENDPOINT'] || config[:api_endpoint] || "https://api.github.com"
+      @github_api_endpoint = ENV['GITHUB_API_ENDPOINT'] || config[:api_endpoint] || 'https://api.github.com'
       @github_private_pem  = ENV['GITHUB_PRIVATE_PEM'] || config[:private_pem] || read_private_key_from_file
       @github_private_key  = OpenSSL::PKey::RSA.new(@github_private_pem)
 
-      @accept_header       = config.fetch(:accept_header, "application/vnd.github.machine-man-preview+json")
+      @accept_header       = config.fetch(:accept_header, 'application/vnd.github.machine-man-preview+json')
       @installation_id     = installation_id
       @repositories        = repositories
       @cache               = Redis.new(config[:redis]) if config[:redis]
@@ -108,8 +110,8 @@ module Travis
       response = github_api_conn.post do |req|
         req.url "app/installations/#{installation_id}/access_tokens"
         req.headers['Authorization'] = "Bearer #{authorization_jwt}"
-        req.headers['Accept'] = "application/vnd.github.machine-man-preview+json"
-        req.body = JSON.dump({:repository_ids => repositories_list, :permissions => { :contents => "read" } }) if repositories
+        req.headers['Accept'] = 'application/vnd.github.machine-man-preview+json'
+        req.body = JSON.dump({ repository_ids: repositories_list, permissions: { contents: 'read' } }) if repositories
       end
 
       # We probably want to do something different than `raise` here but I don't
@@ -121,8 +123,8 @@ module Travis
 
       # Parse the response for the token and expiration
       #
-      response_body = JSON.load(response.body)
-      github_access_token  = response_body.fetch('token')
+      response_body = JSON.parse(response.body)
+      github_access_token = response_body.fetch('token')
 
       # Store the access_token in redis, with a computed expiration. We need to
       #   recalculate this here instead of using APP_TOKEN_TTL because we don't
@@ -139,7 +141,7 @@ module Travis
     end
 
     def authorization_jwt
-      JWT.encode(jwt_payload, @github_private_key, "RS256")
+      JWT.encode(jwt_payload, @github_private_key, 'RS256')
     end
 
     def jwt_payload(jwt_token_ttl: JWT_TOKEN_TTL)
@@ -161,22 +163,23 @@ module Travis
     def github_api_conn
       @_github_api_conn ||= Faraday.new(url: @github_api_endpoint) do |f|
         f.response :logger if debug
-        f.use FaradayMiddleware::FollowRedirects, limit: 5
+        f.response :follow_redirects, limit: 5
         f.request :retry
         f.adapter Faraday.default_adapter
-       end
+      end
     end
 
     def read_cache
-      cache.get(cache_key) if cache
+      cache&.get(cache_key)
     end
 
     def write_cache(token)
-      cache.set(cache_key, token, ex: APP_TOKEN_TTL) if cache
+      cache&.set(cache_key, token, ex: APP_TOKEN_TTL)
     end
 
     def cache_key
       return "github_access_token_repo:#{installation_id}_#{repositories_list.join('-')}" if repositories
+
       "github_access_token:#{installation_id}"
     end
 
@@ -186,13 +189,13 @@ module Travis
     #   source control. If you need a copy of this for development, ask Kerri.
     #
     def read_private_key_from_file
-      pem_files_in_root = Dir["*.pem"]
+      pem_files_in_root = Dir['*.pem']
 
       @_github_private_key ||= if pem_files_in_root.any?
-        File.read(pem_files_in_root.first)
-      else
-        raise "Sorry, can't find local pem file"
-      end
+                                 File.read(pem_files_in_root.first)
+                               else
+                                 raise "Sorry, can't find local pem file"
+                               end
     end
   end
 end
